@@ -81,7 +81,7 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
 
 ```
 - name: Tencent COS and CDN
-  uses: sylingd/tencent-cos-and-cdn-action@latest
+  uses: sylingd/tencent-cos-and-cdn-action@v1
   with:
     secret_id: YOUR_SECRET_ID
     secret_key: YOUR_SECRET_KEY
