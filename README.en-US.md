@@ -1,5 +1,7 @@
 # Tencent Cloud COS and CDN action
 
+[中文](https://github.com/sylingd/tencent-cos-and-cdn-action/blob/master/README.md)
+
 This action can upload files to tencent cloud COS, and flush CDN cache (support regular CDN and EdgeOne CDN).
 
 ## Inputs
