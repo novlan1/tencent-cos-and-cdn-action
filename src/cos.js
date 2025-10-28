@@ -106,7 +106,7 @@ class COS {
     this.remotePath = normalizeObjectKey(inputs.remote_path || '');
     this.replace = inputs.cos_replace_file || "true";
     this.replaceRules = getJSONInput(inputs.cos_replace_rules, []);
-    this.clean = inputs.clean === "true";
+    this.clean = inputs.clean === "true" || inputs.clean === true;
     this.checkConcurrent = Number(inputs.cos_file_check_concurrent);
     if (Number.isNaN(this.checkConcurrent) || this.checkConcurrent <= 0) {
       this.checkConcurrent = getThreadCount();
@@ -380,7 +380,7 @@ class COS {
   }
 
   async process(localFiles) {
-    if (this.clean || this.replace !== 'true') {
+    if (this.clean || this.replace !== 'true' || this.replaceRules.some(x => x.policy !== 'true')) {
       console.log(`[cos] collecting remote files`);
       this.remoteFiles = await this.collectRemoteFiles();
     }

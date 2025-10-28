@@ -45,8 +45,8 @@ class CDN {
     }
 
     this.type = inputs.cdn_type || 'cdn';
-    this.clean = inputs.clean === 'true';
-    this.waitFlush = inputs.cdn_wait_flush === 'true';
+    this.clean = inputs.clean === 'true' || inputs.clean === true;
+    this.waitFlush = inputs.cdn_wait_flush === 'true' || inputs.cdn_wait_flush === true;
     this.cdnPrefix = inputs.cdn_prefix || '';
     this.remotePath = normalizeObjectKey(inputs.remote_path || '');
 

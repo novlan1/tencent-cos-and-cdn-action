@@ -87,7 +87,7 @@
     secret_id: YOUR_SECRET_ID
     secret_key: YOUR_SECRET_KEY
     session_token: YOUR_TOKEN
-    config_file: "${{ github.workspace }}/example.json"
+    config_file: ${{ github.workspace }}/example.json
 ```
 
 配置文件`example.json`示例：
@@ -109,15 +109,15 @@
   "cos_replace_rules": [
     {
       "name": "index.html",
-      "policy": "true",
+      "policy": "true"
     },
     {
       "match": "^.*\\.js$",
-      "policy": "false",
+      "policy": "false"
     },
     {
       "match": "^.*\\.png$",
-      "policy": "size",
+      "policy": "size"
     }
   ]
 }
