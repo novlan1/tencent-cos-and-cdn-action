@@ -99,6 +99,15 @@ Example of configuration file `example.json`:
   }
 }
 ```
+
+## Feature Description
+
+### File duplication check
+
+When `cos_replace_file` uses `crc64ecma`, the CRC64 value calculated by the server will be obtained and compared with the local file; if they are the same, the upload will be skipped. (There is a very small possibility of hash collision)
+
+[Server calculation instructions](https://www.tencentcloud.com/document/product/436/34078)
+
 ### Set Different Replacement Rules for Different Files
 
 You can set different replacement rules for different files, supporting regular expression matching or exact name matching. If multiple rules match, the first one will be used. If no rules match, the `cos_replace_file` configuration will be used.
@@ -121,14 +130,6 @@ You can set different replacement rules for different files, supporting regular 
   ]
 }
 ```
-
-## Feature Description
-
-### File duplication check
-
-When `cos_replace_file` uses `crc64ecma`, the CRC64 value calculated by the server will be obtained and compared with the local file; if they are the same, the upload will be skipped. (There is a very small possibility of hash collision)
-
-[Server calculation instructions](https://www.tencentcloud.com/document/product/436/34078)
 
 ### Multi-part upload
 
