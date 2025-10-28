@@ -60,17 +60,28 @@ class COS {
       UseAccelerate: inputs.cos_accelerate === "true",
       FileParallelLimit: 1, // 默认不使用并发上传
     };
-    // Read other options
-    try {
-      const res = JSON.parse(inputs.cos_init_options);
-      if (typeof res === 'object') {
-        Object.keys(res).forEach(k => {
-          opt[k] = res[k];
-        });
+
+    const getJSONInput = (content, defaultValue = {}) => {
+      if (typeof content === 'undefined' || content === null || content === '') {
+        return defaultValue;
       }
-    } catch (e) {
-      // ignore
+      if (typeof content === 'object') {
+        return content;
+      }
+      try {
+        return JSON.parse(content);
+      } catch (e) {
+        console.log('[cos] parse options failed:', e.message, content);
+      }
+      return defaultValue;
     }
+
+    // Read other options
+    const initOptions = getJSONInput(inputs.cos_init_options);
+    Object.keys(initOptions).forEach(k => {
+      opt[k] = initOptions[k];
+    });
+
     if (inputs.session_token) {
       opt.getAuthorization = (options, callback) => {
         const time = Math.floor(Date.now() / 1000);
@@ -94,24 +105,14 @@ class COS {
     this.localPath = inputs.local_path;
     this.remotePath = normalizeObjectKey(inputs.remote_path || '');
     this.replace = inputs.cos_replace_file || "true";
-    this.replaceRules = Array.isArray(inputs.cos_replace_rules) ? inputs.cos_replace_rules : [];
+    this.replaceRules = getJSONInput(inputs.cos_replace_rules, []);
     this.clean = inputs.clean === "true";
     this.checkConcurrent = Number(inputs.cos_file_check_concurrent);
     if (Number.isNaN(this.checkConcurrent) || this.checkConcurrent <= 0) {
       this.checkConcurrent = getThreadCount();
     }
-    if (inputs.cos_put_options) {
-      try {
-        const res = JSON.parse(inputs.cos_put_options);
-        if (typeof res === 'object') {
-          this.putOptions = res;
-        }
-      } catch (e) {
-        console.log('[cos] Parse put options failed:', e.message, inputs.cos_put_options);
-        // ignore
-      }
-      console.log('[cos] Put options:', this.putOptions)
-    }
+    this.putOptions = getJSONInput(inputs.cos_put_options);
+    console.log('[cos] Put options:', this.putOptions);
   }
 
   uploadFile(key, file) {

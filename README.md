@@ -22,7 +22,7 @@
   - `size` 替换大小不一致的文件
   - `crc64ecma` 通过crc64ecma对比，替换有变更的文件（适合文件数量较多的场景）
   - `false`、`size`、`crc64ecma`可以在一定程度上减少写请求。
-- `cos_replace_rules`: 为不同文件设置不同的替换规则，仅配置文件方式支持。
+- `cos_replace_rules`: 为不同文件设置不同的替换规则。
 - `cos_file_check_concurrent`: 当`cos_replace_file`不为`true`时，检查文件是否需要上传的并发量。默认为CPU核心数*2
 - `cdn_type`: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - `cdn_prefix`: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
@@ -93,7 +93,10 @@
 配置文件`example.json`示例：
 ```json
 {
-  "cos_bucket": "bucket-12345678"
+  "cos_bucket": "bucket-12345678",
+  "cos_init_options": {
+    "FileParallelLimit": 3
+  }
 }
 ```
 
@@ -144,7 +147,6 @@ cos_put_options: '{"SliceSize":1048576,"AsyncLimit":3}'
 
 ```
 cos_init_options: '{"FileParallelLimit":3}'
-
 ```
 
 ### 使用临时密钥

@@ -22,7 +22,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
   - `size` Replace files with inconsistent sizes
   - `crc64ecma` Replace changed files through crc64ecma comparison (suitable for scenarios with a large number of files)
   - `false` / `size` / `crc64ecma` can reduce write requests to some extent.
-- `cos_replace_rules`: Set different replacement rules for different files. Only supported by the configuration file method.
+- `cos_replace_rules`: Set different replacement rules for different files.
 - `cos_file_check_concurrent`: When `cos_replace_file` is not `true`, check whether the file needs to be uploaded concurrently. Default is CPU cores * 2
 - `cdn_wait_flush`: Whether to wait for CDN refresh to complete. Default is `false`
 - `eo_zone`: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
@@ -91,7 +91,10 @@ For example:
 Example of configuration file `example.json`:
 ```json
 {
-  "cos_bucket": "bucket-12345678"
+  "cos_bucket": "bucket-12345678",
+  "cos_init_options": {
+    "FileParallelLimit": 3
+  }
 }
 ```
 ### Set Different Replacement Rules for Different Files
@@ -139,7 +142,6 @@ You can enable concurrent uploads by setting `FileParallelLimit` in `cos_init_op
 
 ```
 cos_init_options: '{"FileParallelLimit":3}'
-
 ```
 
 ### Using temporary key
