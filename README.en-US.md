@@ -24,7 +24,6 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
   - `false` Do not replace all
   - `size` Replace files with inconsistent sizes
   - `crc64ecma` Replace changed files through crc64ecma comparison
-  - `false` / `size` / `crc64ecma` can reduce write requests to some extent.
 - `cos_replace_rules`: Set different replacement rules for different files, see the following instructions for detailed settings
 - `cos_file_check_concurrent`: When `cos_replace_file` is not `true`, check whether the file needs to be uploaded concurrently. Default is CPU cores * 2
 - `cdn_wait_flush`: Whether to wait for CDN refresh to complete. Default is `false`
@@ -35,7 +34,9 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 
 > If `cos_replace_file` is not `true`, or `clean` is turned on, the number of read requests is increased by: number of objects in the bucket / 1000 times. For example, if there are 3100 files with the prefix `remote_path` in the bucket, the number of read requests is increased by 4 times.
 >
-> If `cos_replace_file` is `crc64ecma`, a read request will be added for each existing file of the same size, and Tencent Cloud may charge corresponding fees.
+> If `cos_replace_file` is `crc64ecma`, a read request will be added for each existing file of the same size.
+>
+> Tencent Cloud may charge corresponding fees.
 
 ## Demo
 
@@ -90,7 +91,7 @@ For example:
     config_file: ${{ github.workspace }}/example.json
 ```
 
-Example of configuration file `example.json`:
+Example of configuration file:
 ```json
 {
   "cos_bucket": "bucket-12345678",
@@ -135,7 +136,7 @@ In the configuration file, `cos_replace_rules` is an array:
 In the `with` parameter, `cos_replace_rules` is a JSON string:
 ```yaml
 - name: Tencent COS and CDN
-  uses: sylingd/tencent-cos-and-cdn-action@latest
+  uses: sylingd/tencent-cos-and-cdn-action@v1
   with:
     cos_replace_rules: '[{"name":"index.html","policy":"true"}]'
 ```

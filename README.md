@@ -22,7 +22,6 @@
   - `false` 不替换
   - `size` 替换大小不一致的文件
   - `crc64ecma` 通过crc64ecma对比，替换有变更的文件
-  - `false`、`size`、`crc64ecma`可以在一定程度上减少写请求。
 - `cos_replace_rules`: 为不同文件设置不同的替换规则，详细设置方式见下方说明。
 - `cos_file_check_concurrent`: 当`cos_replace_file`不为`true`时，检查文件是否需要上传的并发量。默认为CPU核心数*2
 - `cdn_type`: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
@@ -35,7 +34,9 @@
 
 > 如果`cos_replace_file`不为`true`，或开启`clean`，增加读请求次数为：Bucket 下 Object 数 / 1000次，例如 Bucket 下前缀为`remote_path`的文件有 3100 个，则增加读请求次数 4 次。
 >
-> 如果`cos_replace_file`为`crc64ecma`，对每个已经存在且大小相同的文件都会增加一次读请求，腾讯云可能会收取相应费用。
+> 如果`cos_replace_file`为`crc64ecma`，对每个已经存在且大小相同的文件都会增加一次读请求。
+>
+> 腾讯云可能会收取相应费用。
 
 ## Demo
 
@@ -90,7 +91,7 @@
     config_file: ${{ github.workspace }}/example.json
 ```
 
-配置文件`example.json`示例：
+配置文件示例：
 ```json
 {
   "cos_bucket": "bucket-12345678",
@@ -135,7 +136,7 @@
 在`with`参数中，`cos_replace_rules`为JSON字符串：
 ```yaml
 - name: Tencent COS and CDN
-  uses: sylingd/tencent-cos-and-cdn-action@latest
+  uses: sylingd/tencent-cos-and-cdn-action@v1
   with:
     cos_replace_rules: '[{"name":"index.html","policy":"true"}]'
 ```
