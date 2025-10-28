@@ -41,9 +41,40 @@ function sleep(time) {
   });
 }
 
-function readConfig(fields) {
-  // 合并数组项
+async function fileExists(fullPath) {
+  try {
+    await fs.access(fullPath, fs.constants.R_OK);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+async function readConfig(fields) {
   const result = {};
+  const readConfigFromFile = async (file) => {
+    try {
+      const content = await fs.readFile(file, "utf-8");
+      const config = JSON.parse(content);
+      Object.keys(config).forEach((k) => {
+        result[k] = config[k];
+      });
+    } catch (e) {
+      console.log(`[core] read config file ${file} failed:`, e.message);
+    }
+  }
+  // 从文件读取
+  const configFile = core.getInput("config_file");
+  if (configFile) {
+    await readConfigFromFile(configFile);
+  }
+  if (!configFile && typeof process.env.GITHUB_WORKSPACE !== 'undefined') {
+    const p = path.join(process.env.GITHUB_WORKSPACE, '.github/cos.json');
+    if (await fileExists(p)) {
+      await readConfigFromFile(p);
+    }
+  }
+  // 合并数组项
   fields.forEach((k) => {
     if (typeof result[k] === "undefined") {
       result[k] = core.getInput(k);
