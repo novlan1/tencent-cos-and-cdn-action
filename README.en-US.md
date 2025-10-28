@@ -20,12 +20,12 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - `cdn_type`: CDN type, you can choose regular CDN (`cdn`) or EdgeOne CDN (`eo`). Default is `cdn`
 - `cdn_prefix`: CDN url prefix if you are using Tencent Cloud CDN or Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
 - `cos_replace_file`: Whether to replace files with the same name. Default is `true`
-  - `true` Replace all (suitable for scenarios where a lot of files change each time)
-  - `false` Do not replace all (suitable for scenarios where a few files change each time and the file name contains hash)
+  - `true` Replace
+  - `false` Do not replace all
   - `size` Replace files with inconsistent sizes
-  - `crc64ecma` Replace changed files through crc64ecma comparison (suitable for scenarios with a large number of files)
+  - `crc64ecma` Replace changed files through crc64ecma comparison
   - `false` / `size` / `crc64ecma` can reduce write requests to some extent.
-- `cos_replace_rules`: Set different replacement rules for different files.
+- `cos_replace_rules`: Set different replacement rules for different files, see the following instructions for detailed settings
 - `cos_file_check_concurrent`: When `cos_replace_file` is not `true`, check whether the file needs to be uploaded concurrently. Default is CPU cores * 2
 - `cdn_wait_flush`: Whether to wait for CDN refresh to complete. Default is `false`
 - `eo_zone`: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
@@ -112,6 +112,7 @@ When `cos_replace_file` uses `crc64ecma`, the CRC64 value calculated by the serv
 
 You can set different replacement rules for different files, supporting regular expression matching or exact name matching. If multiple rules match, the first one will be used. If no rules match, the `cos_replace_file` configuration will be used.
 
+In the configuration file, `cos_replace_rules` is an array:
 ```json
 {
   "cos_replace_rules": [
@@ -129,6 +130,14 @@ You can set different replacement rules for different files, supporting regular 
     }
   ]
 }
+```
+
+In the `with` parameter, `cos_replace_rules` is a JSON string:
+```yaml
+- name: Tencent COS and CDN
+  uses: sylingd/tencent-cos-and-cdn-action@latest
+  with:
+    cos_replace_rules: '[{"name":"index.html","policy":"true"}]'
 ```
 
 ### Multi-part upload

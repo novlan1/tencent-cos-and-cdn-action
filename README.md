@@ -18,12 +18,12 @@
 - `cos_init_options`: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
 - `cos_put_options`: 将会原样传给`uploadFile`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
 - `cos_replace_file`: 是否替换同名文件，默认为`true`
-  - `true` 全部替换（适合每次文件变更非常多的场景）
-  - `false` 全部不替换（适合每次文件变更较少且名称中带有 hash 的场景）
+  - `true` 替换
+  - `false` 不替换
   - `size` 替换大小不一致的文件
-  - `crc64ecma` 通过crc64ecma对比，替换有变更的文件（适合文件数量较多的场景）
+  - `crc64ecma` 通过crc64ecma对比，替换有变更的文件
   - `false`、`size`、`crc64ecma`可以在一定程度上减少写请求。
-- `cos_replace_rules`: 为不同文件设置不同的替换规则。
+- `cos_replace_rules`: 为不同文件设置不同的替换规则，详细设置方式见下方说明。
 - `cos_file_check_concurrent`: 当`cos_replace_file`不为`true`时，检查文件是否需要上传的并发量。默认为CPU核心数*2
 - `cdn_type`: CDN 类型，可选普通CDN（`cdn`）或 EdgeOne CDN（`eo`）。默认为`cdn`
 - `cdn_prefix`: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
@@ -112,6 +112,7 @@
 
 可以为不同文件设置不同的替换规则，支持正则表达式匹配或完全名称匹配。如有多个规则匹配，将会生效第一个。如果没有匹配规则，则使用`cos_replace_file`的配置。
 
+在配置文件中，`cos_replace_rules`为数组：
 ```json
 {
   "cos_replace_rules": [
@@ -129,6 +130,14 @@
     }
   ]
 }
+```
+
+在`with`参数中，`cos_replace_rules`为JSON字符串：
+```yaml
+- name: Tencent COS and CDN
+  uses: sylingd/tencent-cos-and-cdn-action@latest
+  with:
+    cos_replace_rules: '[{"name":"index.html","policy":"true"}]'
 ```
 
 ### 分片上传
