@@ -7,8 +7,8 @@ const path = require("path");
 const crc64 = require("crc64-ecma182.js");
 const { normalizeObjectKey } = require("./utils");
 
-const FILE_EXISTS = Symbol();
-const HEAD_FAILED = Symbol();
+const FILE_EXISTS = Symbol("file_exists");
+const HEAD_FAILED = Symbol("head_failed");
 
 function getThreadCount() {
   try {
@@ -330,13 +330,13 @@ class COS {
           objectKey,
           localPath
         );
+        core.debug(`[cos] [uploadFiles] [uploadQueue] ${file} ${shouldUpload}`)
         if (shouldUpload === FILE_EXISTS) {
-          onFileFinish("skiped(file exists)", objectKey);
+          onFileFinish("skipped(file exists)", objectKey);
         } else if (shouldUpload === HEAD_FAILED) {
-          onFileFinish("skiped(head failed)", objectKey);
+          onFileFinish("skipped(head failed)", objectKey);
         } else {
           this.uploadFile(objectKey, localPath);
-          changedFiles.push(file);
         }
       }, this.checkConcurrent);
 
