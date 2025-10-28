@@ -1,7 +1,7 @@
-const os = require('os');
-const core = require('@actions/core');
+const os = require("os");
+const core = require("@actions/core");
 const COS_SDK = require("cos-nodejs-sdk-v5");
-const fastq = require('fastq')
+const fastq = require("fastq");
 const fs = require("fs/promises");
 const path = require("path");
 const crc64 = require("crc64-ecma182.js");
@@ -62,23 +62,27 @@ class COS {
     };
 
     const getJSONInput = (content, defaultValue = {}) => {
-      if (typeof content === 'undefined' || content === null || content === '') {
+      if (
+        typeof content === "undefined" ||
+        content === null ||
+        content === ""
+      ) {
         return defaultValue;
       }
-      if (typeof content === 'object') {
+      if (typeof content === "object") {
         return content;
       }
       try {
         return JSON.parse(content);
       } catch (e) {
-        console.log('[cos] parse options failed:', e.message, content);
+        console.log("[cos] parse options failed:", e.message, content);
       }
       return defaultValue;
-    }
+    };
 
     // Read other options
     const initOptions = getJSONInput(inputs.cos_init_options);
-    Object.keys(initOptions).forEach(k => {
+    Object.keys(initOptions).forEach((k) => {
       opt[k] = initOptions[k];
     });
 
@@ -103,7 +107,7 @@ class COS {
     this.bucket = inputs.cos_bucket;
     this.region = inputs.cos_region;
     this.localPath = inputs.local_path;
-    this.remotePath = normalizeObjectKey(inputs.remote_path || '');
+    this.remotePath = normalizeObjectKey(inputs.remote_path || "");
     this.replace = inputs.cos_replace_file || "true";
     this.replaceRules = getJSONInput(inputs.cos_replace_rules, []);
     this.clean = inputs.clean === "true" || inputs.clean === true;
@@ -112,7 +116,7 @@ class COS {
       this.checkConcurrent = getThreadCount();
     }
     this.putOptions = getJSONInput(inputs.cos_put_options);
-    console.log('[cos] Put options:', this.putOptions);
+    console.log("[cos] Put options:", this.putOptions);
   }
 
   uploadFile(key, file) {
@@ -158,13 +162,13 @@ class COS {
 
   generateFileInfo(p) {
     return {
-      objectKey: normalizeObjectKey(this.remotePath + '/' + p),
-      localPath: path.join(this.localPath, p)
+      objectKey: normalizeObjectKey(this.remotePath + "/" + p),
+      localPath: path.join(this.localPath, p),
     };
   }
 
   getFileCheckPolicy(p) {
-    const res = this.replaceRules.find(rule => {
+    const res = this.replaceRules.find((rule) => {
       if (rule.name) {
         return rule.name === p;
       }
@@ -173,7 +177,7 @@ class COS {
           const match = new RegExp(rule.match);
           return match.test(p);
         } catch (e) {
-          console.log('[cos] Invalid regexp:', rule.match);
+          console.log("[cos] Invalid regexp:", rule.match);
         }
       }
       return false;
@@ -185,21 +189,23 @@ class COS {
     const policy = this.getFileCheckPolicy(basePath);
     core.debug(`[cos] [shouldUploadFile] ${p} policy: ${policy}`);
     // do not check
-    if (policy === 'true') {
+    if (policy === "true") {
       return true;
     }
     // has listed bucket
-    if (typeof this.remoteFiles !== 'undefined') {
-      if (typeof this.remoteFiles[basePath] === 'undefined') {
+    if (typeof this.remoteFiles !== "undefined") {
+      if (typeof this.remoteFiles[basePath] === "undefined") {
         // new file, skip head operator
         core.debug(`[cos] [shouldUploadFile] ${basePath} is new file`);
         return true;
       }
 
-      if (policy === 'size' || policy === 'crc64ecma') {
+      if (policy === "size" || policy === "crc64ecma") {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
-        core.debug(`[cos] [shouldUploadFile] ${basePath} size is: local ${fileInfo.size} remote ${this.remoteFiles[basePath].Size}`);
+        core.debug(
+          `[cos] [shouldUploadFile] ${basePath} size is: local ${fileInfo.size} remote ${this.remoteFiles[basePath].Size}`
+        );
         if (String(fileInfo.size) !== String(this.remoteFiles[basePath].Size)) {
           return true;
         }
@@ -209,7 +215,7 @@ class COS {
     try {
       info = await this.headObject(objectKey);
     } catch (e) {
-      if (e.code === '404') {
+      if (e.code === "404") {
         core.debug(`[cos] [shouldUploadFile] ${basePath} head return 404`);
         // file not exists, continue upload
         return true;
@@ -219,10 +225,12 @@ class COS {
       }
     }
     // check crc64ecma
-    if (policy === 'crc64ecma') {
-      const exist = info.headers['x-cos-hash-crc64ecma'];
+    if (policy === "crc64ecma") {
+      const exist = info.headers["x-cos-hash-crc64ecma"];
       const cur = await hashFile(localPath);
-      core.debug(`[cos] [shouldUploadFile] ${basePath} crc64ecma is: local ${cur} remote ${exist}`);
+      core.debug(
+        `[cos] [shouldUploadFile] ${basePath} crc64ecma is: local ${cur} remote ${exist}`
+      );
       if (exist === cur) {
         return FILE_EXISTS;
       } else {
@@ -239,7 +247,7 @@ class COS {
         {
           Bucket: this.bucket,
           Region: this.region,
-          Key: normalizeObjectKey(this.remotePath + '/' + p),
+          Key: normalizeObjectKey(this.remotePath + "/" + p),
         },
         function (err, data) {
           if (err) {
@@ -284,38 +292,48 @@ class COS {
       const onFileFinish = (state, key) => {
         finished.push(key);
         const percent = parseInt((finished.length / size) * 100);
-        console.log(`>> [${finished.length}/${size}, ${percent}%] ${state} ${key}`);
+        console.log(
+          `>> [${finished.length}/${size}, ${percent}%] ${state} ${key}`
+        );
         if (finished.length === size) {
-          this.cos.off('list-update', handleListUpdate);
+          this.cos.off("list-update", handleListUpdate);
           resolve(changedFiles);
         }
       };
 
       // 队列上传进度改变
       const handleListUpdate = (data) => {
-        const notFinished = data.list.filter(x => !finished.includes(x.Key));
+        const notFinished = data.list.filter((x) => !finished.includes(x.Key));
 
         if (core.isDebug()) {
-          core.debug(`[cos] [uploadFiles] [handleListUpdate] ${JSON.stringify(notFinished.map(x => [x.state, x.Key]))}`);
+          core.debug(
+            `[cos] [uploadFiles] [handleListUpdate] ${JSON.stringify(
+              notFinished.map((x) => [x.state, x.Key])
+            )}`
+          );
         }
 
-        notFinished.forEach(item => {
-          if (['success', 'canceled', 'error'].includes(item.state)) {
+        notFinished.forEach((item) => {
+          if (["success", "canceled", "error"].includes(item.state)) {
             onFileFinish(`upload ${item.state}`, item.Key);
           }
         });
-      }
+      };
 
-      this.cos.on('list-update', handleListUpdate);
-      
+      this.cos.on("list-update", handleListUpdate);
+
       // file like: js/index.js
       const uploadQueue = fastq.promise(async (file) => {
         const { objectKey, localPath } = this.generateFileInfo(file);
-        const shouldUpload = await this.shouldUploadFile(file, objectKey, localPath);
+        const shouldUpload = await this.shouldUploadFile(
+          file,
+          objectKey,
+          localPath
+        );
         if (shouldUpload === FILE_EXISTS) {
-          onFileFinish('skiped(file exists)', objectKey);
+          onFileFinish("skiped(file exists)", objectKey);
         } else if (shouldUpload === HEAD_FAILED) {
-          onFileFinish('skiped(head failed)', objectKey);
+          onFileFinish("skiped(head failed)", objectKey);
         } else {
           this.uploadFile(objectKey, localPath);
           changedFiles.push(file);
@@ -323,7 +341,13 @@ class COS {
       }, this.checkConcurrent);
 
       // 处理所有文件
-      localFiles.forEach(file => uploadQueue.push(file));
+      localFiles.forEach((file) =>
+        uploadQueue
+          .push(file)
+          .catch((e) =>
+            console.log(`[cos] upload ${file} failed: ${e.message}`)
+          )
+      );
     });
   }
 
@@ -331,7 +355,7 @@ class COS {
     let data = {};
     let nextMarker = null;
 
-    if (typeof this.remoteFiles === 'undefined') {
+    if (typeof this.remoteFiles === "undefined") {
       this.remoteFiles = {};
     }
 
@@ -342,11 +366,17 @@ class COS {
         this.remoteFiles[p] = e;
       }
       nextMarker = data.NextMarker;
-      core.debug(`[cos] [collectRemoteFiles] IsTruncated: ${data.IsTruncated}, NextMarker: ${nextMarker}`);
+      core.debug(
+        `[cos] [collectRemoteFiles] IsTruncated: ${data.IsTruncated}, NextMarker: ${nextMarker}`
+      );
     } while (data.IsTruncated === "true");
 
     if (core.isDebug()) {
-      core.debug(`[cos] [collectRemoteFiles] keys: ${Object.keys(this.remoteFiles).join(',')}`);
+      core.debug(
+        `[cos] [collectRemoteFiles] keys: ${Object.keys(this.remoteFiles).join(
+          ","
+        )}`
+      );
     }
 
     return this.remoteFiles;
@@ -354,7 +384,7 @@ class COS {
 
   findDeletedFiles(localFiles) {
     const deletedFiles = new Set();
-    if (typeof this.remoteFiles === 'undefined') {
+    if (typeof this.remoteFiles === "undefined") {
       return deletedFiles;
     }
     const remoteFiles = Object.keys(this.remoteFiles);
@@ -374,13 +404,17 @@ class COS {
       await this.deleteFile(file);
       index++;
       percent = parseInt((index / size) * 100);
-      const displayPath = normalizeObjectKey(this.remotePath + '/' + file);
+      const displayPath = normalizeObjectKey(this.remotePath + "/" + file);
       console.log(`>> [${index}/${size}, ${percent}%] cleaned ${displayPath}`);
     }
   }
 
   async process(localFiles) {
-    if (this.clean || this.replace !== 'true' || this.replaceRules.some(x => x.policy !== 'true')) {
+    if (
+      this.clean ||
+      this.replace !== "true" ||
+      this.replaceRules.some((x) => x.policy !== "true")
+    ) {
       console.log(`[cos] collecting remote files`);
       this.remoteFiles = await this.collectRemoteFiles();
     }
@@ -389,7 +423,7 @@ class COS {
     try {
       changedFiles = await this.uploadFiles(localFiles);
     } catch (e) {
-      console.error('upload failed: ', e);
+      console.log("upload failed: ", e);
       process.exit(-1);
     }
     let cleanedFilesCount = 0;
@@ -405,7 +439,9 @@ class COS {
     if (cleanedFilesCount > 0) {
       cleanedFilesMessage = `, cleaned ${cleanedFilesCount} files`;
     }
-    console.log(`[cos] uploaded ${changedFiles.length} files${cleanedFilesMessage}`);
+    console.log(
+      `[cos] uploaded ${changedFiles.length} files${cleanedFilesMessage}`
+    );
     return changedFiles;
   }
 }
