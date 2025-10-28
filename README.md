@@ -13,6 +13,7 @@
 - `session_token`: 腾讯云临时密钥的 session token，可通过其他 actions 获取后传入
 - `cos_bucket`(**必填**): COS 存储桶名称
 - `cos_region`(**必填**): COS 存储桶区域
+- `local_path`(**必填**): 将要上传到 COS 的本地路径。可为文件夹或单个文件
 - `cos_accelerate`: 设为`true`以使用加速域名进行上传（此选项与 CDN 无关）。默认为`false`
 - `cos_init_options`: 将会原样传给`new COS`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/8629)
 - `cos_put_options`: 将会原样传给`uploadFile`的选项，JSON格式。[官方文档](https://cloud.tencent.com/document/product/436/64980)
@@ -28,7 +29,6 @@
 - `cdn_prefix`: 若你使用腾讯云 CDN 或 EdgeOne，此处填写 CDN 的 URL 前缀。若为空，则不刷新 CDN 缓存
 - `cdn_wait_flush`: 是否等待 CDN 刷新完成。默认为`false`
 - `eo_zone`: 若你使用腾讯云 EdgeOne，此处填写 EdgeOne 的 Zone ID。若为空，则不刷新 CDN 缓存
-- `local_path`(**必填**): 将要上传到 COS 的本地路径。可为文件夹或单个文件
 - `remote_path`: 将文件上传到 COS 的指定路径。默认为`(空字符串)`
 - `clean`: 设为`true`将会清除 COS 上不存在于本地的文件，会增加少量读请求和相应的删除（写）请求。默认为`false`
   - 该功能仅会清空`remote_path`下的文件。

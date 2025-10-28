@@ -13,6 +13,7 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - `session_token`: Tencent Cloud session token for temporary key, may get from other actions
 - `cos_bucket`(**Required**): COS bucket name
 - `cos_region`(**Required**): COS bucket region
+- `local_path`(**Required**): Local path to be uploaded to COS. Directory or file is allowed
 - `cos_accelerate`: Set to `true` for using accelerate domain to upload files (this input is not independent of the CDN). Default is false
 - `cos_init_options`: The options that will be passed to `new COS` as is, in JSON format.[official documentation](https://www.tencentcloud.com/document/product/436/7749)
 - `cos_put_options`: The options that will be passed to `uploadFile` as is, in JSON format. [official documentation](https://www.tencentcloud.com/document/product/436/43871)
@@ -28,7 +29,6 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 - `cos_file_check_concurrent`: When `cos_replace_file` is not `true`, check whether the file needs to be uploaded concurrently. Default is CPU cores * 2
 - `cdn_wait_flush`: Whether to wait for CDN refresh to complete. Default is `false`
 - `eo_zone`: The Zone ID if you are using Tencent Cloud EdgeOne. If is empty, this action will not flush CDN cache.
-- `local_path`(**Required**): Local path to be uploaded to COS. Directory or file is allowed
 - `remote_path`: COS path to put the local files in on COS. Default is `(empty string)`
 - `clean`: Set to `true` for cleaning files on COS path which are not existed in local path. Default is `false`
   - This function will only clear the files under `remote_path`.
