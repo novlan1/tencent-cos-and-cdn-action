@@ -187,7 +187,7 @@ class COS {
 
   async shouldUploadFile(basePath, objectKey, localPath) {
     const policy = this.getFileCheckPolicy(basePath);
-    core.debug(`[cos] [shouldUploadFile] ${p} policy: ${policy}`);
+    core.debug(`[cos] [shouldUploadFile] ${basePath} policy: ${policy}`);
     // do not check
     if (policy === "true") {
       return true;
