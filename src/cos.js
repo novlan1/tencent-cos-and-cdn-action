@@ -336,6 +336,7 @@ class COS {
         } else if (shouldUpload === HEAD_FAILED) {
           onFileFinish("skipped(head failed)", objectKey);
         } else {
+          changedFiles.push(file);
           this.uploadFile(objectKey, localPath);
         }
       }, this.checkConcurrent);
