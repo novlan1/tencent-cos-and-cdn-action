@@ -41,6 +41,7 @@ class COS {
       "cos_init_options",
       "cos_put_options",
       "cos_replace_file",
+      "cos_replace_rules",
       "cos_file_check_concurrent",
       "cos_bucket",
       "cos_region",
@@ -93,6 +94,7 @@ class COS {
     this.localPath = inputs.local_path;
     this.remotePath = normalizeObjectKey(inputs.remote_path || '');
     this.replace = inputs.cos_replace_file || "true";
+    this.replaceRules = Array.isArray(inputs.cos_replace_rules) ? inputs.cos_replace_rules : [];
     this.clean = inputs.clean === "true";
     this.checkConcurrent = Number(inputs.cos_file_check_concurrent);
     if (Number.isNaN(this.checkConcurrent) || this.checkConcurrent <= 0) {
@@ -160,9 +162,29 @@ class COS {
     };
   }
 
+  getFileCheckPolicy(p) {
+    const res = this.replaceRules.find(rule => {
+      if (rule.name) {
+        return rule.name === p;
+      }
+      if (rule.match) {
+        try {
+          const match = new RegExp(rule.match);
+          return match.test(p);
+        } catch (e) {
+          console.log('[cos] Invalid regexp:', rule.match);
+        }
+      }
+      return false;
+    });
+    return res ? res.policy : this.replace;
+  }
+
   async shouldUploadFile(basePath, objectKey, localPath) {
+    const policy = this.getFileCheckPolicy(basePath);
+    core.debug(`[cos] [shouldUploadFile] ${p} policy: ${policy}`);
     // do not check
-    if (this.replace === 'true') {
+    if (policy === 'true') {
       return true;
     }
     // has listed bucket
@@ -173,7 +195,7 @@ class COS {
         return true;
       }
 
-      if (this.replace === 'size' || this.replace === 'crc64ecma') {
+      if (policy === 'size' || policy === 'crc64ecma') {
         // check file size is match
         const fileInfo = await fs.stat(localPath);
         core.debug(`[cos] [shouldUploadFile] ${basePath} size is: local ${fileInfo.size} remote ${this.remoteFiles[basePath].Size}`);
@@ -196,7 +218,7 @@ class COS {
       }
     }
     // check crc64ecma
-    if (this.replace === 'crc64ecma') {
+    if (policy === 'crc64ecma') {
       const exist = info.headers['x-cos-hash-crc64ecma'];
       const cur = await hashFile(localPath);
       core.debug(`[cos] [shouldUploadFile] ${basePath} crc64ecma is: local ${cur} remote ${exist}`);
@@ -285,6 +307,7 @@ class COS {
 
       this.cos.on('list-update', handleListUpdate);
       
+      // file like: js/index.js
       const uploadQueue = fastq.promise(async (file) => {
         const { objectKey, localPath } = this.generateFileInfo(file);
         const shouldUpload = await this.shouldUploadFile(file, objectKey, localPath);

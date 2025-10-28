@@ -4,7 +4,7 @@ const { readConfig, collectLocalFiles } = require("./utils");
 
 async function main() {
   // 读取配置
-  const config = readConfig(
+  const config = await readConfig(
     new Set([
       "clean",
       "local_path",
