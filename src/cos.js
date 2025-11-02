@@ -330,7 +330,7 @@ class COS {
           objectKey,
           localPath
         );
-        core.debug(`[cos] [uploadFiles] [uploadQueue] ${file} ${shouldUpload}`)
+        core.debug(`[cos] [uploadFiles] [uploadQueue] ${file} ${String(shouldUpload)}`)
         if (shouldUpload === FILE_EXISTS) {
           onFileFinish("skipped(file exists)", objectKey);
         } else if (shouldUpload === HEAD_FAILED) {
