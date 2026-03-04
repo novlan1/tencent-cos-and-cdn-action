@@ -38,6 +38,11 @@
 >
 > 腾讯云可能会收取相应费用。
 
+## 输出
+
+- `urls`: 所有变更文件的 CDN URL，以换行符分隔。仅在配置了 `cdn_prefix` 时有值
+- `url`: 第一个变更文件的 CDN URL。仅在配置了 `cdn_prefix` 时有值
+
 ## Demo
 
 例如，当文件结构为：
@@ -51,6 +56,7 @@
 
 ```yaml
 - name: Tencent COS and CDN
+  id: deploy
   uses: sylingd/tencent-cos-and-cdn-action@v1
   with:
     secret_id: YOUR_SECRET_ID
@@ -69,8 +75,17 @@
     local_path: upload_folder
     remote_path: scripts
     clean: false
+
+- name: Print CDN URLs
+  run: |
+    echo "First URL: ${{ steps.deploy.outputs.url }}"
+    echo "All URLs:"
+    echo "${{ steps.deploy.outputs.urls }}"
 ```
 
+> 注意：使用输出时，需要给上传步骤添加 `id`（如上例中的 `id: deploy`），然后通过 `steps.<id>.outputs.url` / `steps.<id>.outputs.urls` 引用。
+
+更多示例可参考[test分支]
 更多示例可参考[test分支](https://github.com/sylingd/tencent-cos-and-cdn-action/tree/test)
 
 ## 使用配置文件

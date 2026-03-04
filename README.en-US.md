@@ -38,6 +38,11 @@ This action can upload files to tencent cloud COS, and flush CDN cache (support 
 >
 > Tencent Cloud may charge corresponding fees.
 
+## Outputs
+
+- `urls`: CDN URLs of all changed files, separated by newline. Only available when `cdn_prefix` is configured
+- `url`: CDN URL of the first changed file. Only available when `cdn_prefix` is configured
+
 ## Demo
 
 For example, when the file structure is:
@@ -51,6 +56,7 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
 
 ```yaml
 - name: Tencent COS and CDN
+  id: deploy
   uses: sylingd/tencent-cos-and-cdn-action@latest
   with:
     secret_id: YOUR_SECRET_ID
@@ -69,7 +75,15 @@ The following command will upload the file `upload_folder/a.js` to `bucket-12345
     local_path: upload_folder
     remote_path: scripts
     clean: false
+
+- name: Print CDN URLs
+  run: |
+    echo "First URL: ${{ steps.deploy.outputs.url }}"
+    echo "All URLs:"
+    echo "${{ steps.deploy.outputs.urls }}"
 ```
+
+> Note: To use outputs, you need to add an `id` to the upload step (e.g. `id: deploy` as shown above), then reference via `steps.<id>.outputs.url` / `steps.<id>.outputs.urls`.
 
 For more examples, please refer to the [test branch](https://github.com/sylingd/tencent-cos-and-cdn-action/tree/test)
 

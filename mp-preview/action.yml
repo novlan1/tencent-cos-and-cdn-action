@@ -1,0 +1,258 @@
+name: 'WeChat Mini Program Preview & Upload'
+description: 'WeChat Mini Program CI preview/upload Action with PR comment support'
+branding:
+  icon: 'smartphone'
+  color: 'green'
+
+inputs:
+  mini_app_id:
+    description: 'Mini Program AppID'
+    required: true
+  mini_app_private_key:
+    description: 'Mini Program upload key (Base64 or PEM)'
+    required: true
+  allowed_users:
+    description: 'Allowed users whitelist (JSON, e.g. {"novlan1":1,"yao":2}, value is robot number)'
+    required: true
+  build_command:
+    description: 'Build command'
+    required: false
+    default: 'pnpm run build:mp'
+  project_path:
+    description: 'Mini Program build output directory (relative to project root)'
+    required: false
+    default: 'dist/build/mp-weixin'
+  node_version:
+    description: 'Node.js version, leave empty to use .node-version file'
+    required: false
+    default: ''
+  install_command:
+    description: 'Install dependencies command'
+    required: false
+    default: 'pnpm install'
+  cos_secret_id:
+    description: 'Tencent COS Secret ID'
+    required: false
+    default: ''
+  cos_secret_key:
+    description: 'Tencent COS Secret Key'
+    required: false
+    default: ''
+  cos_bucket:
+    description: 'Tencent COS Bucket'
+    required: false
+    default: ''
+  cos_region:
+    description: 'Tencent COS Region'
+    required: false
+    default: 'ap-guangzhou'
+  cos_remote_path:
+    description: 'COS remote upload path'
+    required: false
+    default: ''
+  cdn_prefix:
+    description: 'CDN URL prefix'
+    required: false
+    default: ''
+
+outputs:
+  version:
+    description: 'Build version'
+  robot:
+    description: 'Robot number used'
+  qrcode-path:
+    description: 'Preview QR code path'
+  cos-url:
+    description: 'COS uploaded URL'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check author
+      id: check-author
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const isPR = context.eventName === 'pull_request';
+          const allowedUsers = JSON.parse(process.env.ALLOWED_USERS);
+          let author, allowed;
+
+          if (isPR) {
+            author = context.payload.pull_request.user.login;
+            allowed = Object.keys(allowedUsers).includes(author);
+            core.info(`PR author: ${author}, allowed: ${allowed}`);
+          } else {
+            author = context.actor;
+            allowed = true;
+            core.info(`Push by: ${author}, auto allowed`);
+          }
+
+          core.setOutput('allowed', String(allowed));
+          core.setOutput('author', author);
+          core.setOutput('is-pr', String(isPR));
+      env:
+        ALLOWED_USERS: ${{ inputs.allowed_users }}
+
+    - name: Skip non-allowed user
+      if: steps.check-author.outputs.allowed != 'true'
+      shell: bash
+      run: echo "Skip user ${{ steps.check-author.outputs.author }}"
+
+    - name: Find or create PR comment
+      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true'
+      id: bot-comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const MARKER = '<!-- mp-preview-bot -->';
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          const body = `${MARKER}\n⏳ Building Mini Program preview...\n\n🔗 [Build Log](${runUrl})`;
+
+          const { data: comments } = await github.rest.issues.listComments({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+          });
+          const existing = comments.find(c => c.body && c.body.includes(MARKER));
+
+          let commentId;
+          if (existing) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: existing.id,
+              body,
+            });
+            commentId = existing.id;
+            core.info(`Reuse comment #${commentId}`);
+          } else {
+            const { data: comment } = await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body,
+            });
+            commentId = comment.id;
+            core.info(`Create comment #${commentId}`);
+          }
+          core.setOutput('comment-id', commentId);
+
+    - uses: pnpm/action-setup@v4
+      if: steps.check-author.outputs.allowed == 'true'
+
+    - name: Setup Node.js (specified version)
+      uses: actions/setup-node@v6
+      if: steps.check-author.outputs.allowed == 'true' && inputs.node_version != ''
+      with:
+        node-version: ${{ inputs.node_version }}
+
+    - name: Setup Node.js (from .node-version)
+      uses: actions/setup-node@v6
+      if: steps.check-author.outputs.allowed == 'true' && inputs.node_version == ''
+      with:
+        node-version-file: .node-version
+
+    - name: Install dependencies
+      if: steps.check-author.outputs.allowed == 'true'
+      shell: bash
+      run: ${{ inputs.install_command }}
+
+    - name: Build Mini Program
+      if: steps.check-author.outputs.allowed == 'true'
+      shell: bash
+      run: ${{ inputs.build_command }}
+
+    - name: Clean deps & install miniprogram-ci
+      if: steps.check-author.outputs.allowed == 'true'
+      shell: bash
+      run: |
+        rm -rf node_modules
+        node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          delete pkg.dependencies;
+          delete pkg.devDependencies;
+          fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
+        "
+        npm install miniprogram-ci dotenv
+
+    - name: Run preview/upload
+      if: steps.check-author.outputs.allowed == 'true'
+      id: mp-preview
+      shell: bash
+      env:
+        MINI_APP_ID: ${{ inputs.mini_app_id }}
+        MINI_APP_PRIVATE_KEY: ${{ inputs.mini_app_private_key }}
+        PR_AUTHOR: ${{ github.event.pull_request.user.login || github.actor }}
+        PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+        PR_TITLE: ${{ github.event.pull_request.title || github.event.head_commit.message }}
+        COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        IS_PR: ${{ steps.check-author.outputs.is-pr }}
+        MP_PROJECT_PATH: ${{ inputs.project_path }}
+        MP_ALLOWED_USERS: ${{ inputs.allowed_users }}
+      run: node ${{ github.action_path }}/mp-preview.mjs
+
+    - name: Upload QR code to COS
+      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true' && inputs.cos_secret_id != ''
+      uses: novlan1/tencent-cos-and-cdn-action@master
+      id: cos
+      with:
+        secret_id: ${{ inputs.cos_secret_id }}
+        secret_key: ${{ inputs.cos_secret_key }}
+        cos_bucket: ${{ inputs.cos_bucket }}
+        cos_region: ${{ inputs.cos_region }}
+        local_path: wx-mp-preview-qrcode.png
+        cdn_type: cdn
+        cdn_prefix: ${{ inputs.cdn_prefix }}
+        cdn_wait_flush: true
+        remote_path: ${{ inputs.cos_remote_path }}
+
+    - name: Comment PR (preview QR code)
+      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true' && inputs.cos_secret_id != ''
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const author = '${{ steps.check-author.outputs.author }}';
+          const sha = '${{ github.event.pull_request.head.sha }}'.slice(0, 7);
+          const cosUrl = '${{ steps.cos.outputs.url }}';
+          const version = `${{ steps.mp-preview.outputs.version }}`;
+          const robot = '${{ steps.mp-preview.outputs.robot }}';
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+          const MARKER = '<!-- mp-preview-bot -->';
+          await github.rest.issues.updateComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: ${{ steps.bot-comment.outputs.comment-id }},
+            body: [
+              MARKER,
+              `### 📱 Mini Program Preview`,
+              ``,
+              `<img alt="Preview QR Code" src="${cosUrl}" width="280" />`,
+              ``,
+              `| Info | Detail |`,
+              `|------|--------|`,
+              `| **Version** | \`${version}\` |`,
+              `| **Robot** | #${robot} |`,
+              `| **Commit** | \`${sha}\` |`,
+              `| **Author** | @${author} |`,
+              `| **CI** | [Build Log](${runUrl}) |`,
+            ].join('\n')
+          });
+
+    - name: Comment PR (build failed)
+      if: failure() && steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const MARKER = '<!-- mp-preview-bot -->';
+          const commentId = '${{ steps.bot-comment.outputs.comment-id }}';
+          const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+          if (commentId) {
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: Number(commentId),
+              body: `${MARKER}\n### ❌ Mini Program build failed\n\n🔗 [Build Log](${runUrl})`
+            });
+          }
