@@ -11,6 +11,7 @@
  * - IS_PR: 是否为 PR 场景（'true' / 'false'）
  * - MP_PROJECT_PATH: 小程序产物目录（相对于项目根目录）
  * - MP_ALLOWED_USERS: 用户白名单 JSON（如 {"novlan1":1,"yao":2}）
+ * - MP_DESC_PREFIX: description 前缀（如 starter, starter-apply）
  */
 
 import { writeFileSync, existsSync, unlinkSync } from 'node:fs';
@@ -213,9 +214,11 @@ async function main() {
     const version = prNumber
       ? `PR#${prNumber}-${commitSha?.slice(0, 7) || 'unknown'}`
       : `dev-${commitSha?.slice(0, 7) || 'unknown'}`;
-    const description = prNumber
+    const descPrefix = getEnv('MP_DESC_PREFIX', false);
+    const rawDesc = prNumber
       ? `PR #${prNumber}: ${prTitle || '预览版本'}`
       : prTitle || 'branch push';
+    const description = descPrefix ? `[${descPrefix}] ${rawDesc}` : rawDesc;
 
     const ciParams = { appId, keyPath, robot, version, description };
 

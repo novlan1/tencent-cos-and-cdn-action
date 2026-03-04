@@ -54,6 +54,10 @@ inputs:
     description: 'CDN URL prefix'
     required: false
     default: ''
+  description_prefix:
+    description: 'Description prefix for version description (e.g. starter, starter-apply)'
+    required: false
+    default: ''
 
 outputs:
   version:
@@ -190,6 +194,7 @@ runs:
         IS_PR: ${{ steps.check-author.outputs.is-pr }}
         MP_PROJECT_PATH: ${{ inputs.project_path }}
         MP_ALLOWED_USERS: ${{ inputs.allowed_users }}
+        MP_DESC_PREFIX: ${{ inputs.description_prefix }}
       run: |
         cp ${{ github.action_path }}/mp-preview.mjs ./mp-preview.mjs
         node ./mp-preview.mjs
