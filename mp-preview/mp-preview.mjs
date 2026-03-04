@@ -16,10 +16,15 @@
 import { writeFileSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import dotenv from 'dotenv';
-
 const ROOT_DIR = process.cwd();
-dotenv.config({ path: resolve(ROOT_DIR, '.env.local') });
+
+// dotenv 仅用于本地开发，CI 环境中通过 env 注入变量，找不到包时跳过
+try {
+  const dotenv = await import('dotenv');
+  dotenv.config({ path: resolve(ROOT_DIR, '.env.local') });
+} catch {
+  // dotenv not available, skip
+}
 
 // ===================== 配置 =====================
 

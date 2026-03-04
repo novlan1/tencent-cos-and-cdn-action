@@ -174,7 +174,7 @@ runs:
           delete pkg.devDependencies;
           fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
         "
-        npm install miniprogram-ci dotenv
+        npm install miniprogram-ci
 
     - name: Run preview/upload
       if: steps.check-author.outputs.allowed == 'true'
@@ -193,7 +193,7 @@ runs:
       run: node ${{ github.action_path }}/mp-preview.mjs
 
     - name: Upload QR code to COS
-      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true' && inputs.cos_secret_id != ''
+      if: steps.check-author.outputs.allowed == 'true' && inputs.cos_secret_id != ''
       uses: novlan1/tencent-cos-and-cdn-action@master
       id: cos
       with:
@@ -208,7 +208,7 @@ runs:
         remote_path: ${{ inputs.cos_remote_path }}
 
     - name: Comment PR (preview QR code)
-      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true' && inputs.cos_secret_id != ''
+      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true' && inputs.cos_secret_id != '' && steps.cos.outputs.url != ''
       uses: actions/github-script@v7
       with:
         script: |
@@ -239,6 +239,17 @@ runs:
               `| **CI** | [Build Log](${runUrl}) |`,
             ].join('\n')
           });
+
+    - name: Log upload result (push)
+      if: steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr != 'true'
+      shell: bash
+      run: |
+        echo "✅ 小程序上传完成"
+        echo "版本号: ${{ steps.mp-preview.outputs.version }}"
+        echo "机器人: ${{ steps.mp-preview.outputs.robot }}"
+        if [ -n "${{ steps.cos.outputs.url }}" ]; then
+          echo "二维码 URL: ${{ steps.cos.outputs.url }}"
+        fi
 
     - name: Comment PR (build failed)
       if: failure() && steps.check-author.outputs.allowed == 'true' && steps.check-author.outputs.is-pr == 'true'
