@@ -190,7 +190,9 @@ runs:
         IS_PR: ${{ steps.check-author.outputs.is-pr }}
         MP_PROJECT_PATH: ${{ inputs.project_path }}
         MP_ALLOWED_USERS: ${{ inputs.allowed_users }}
-      run: node ${{ github.action_path }}/mp-preview.mjs
+      run: |
+        cp ${{ github.action_path }}/mp-preview.mjs ./mp-preview.mjs
+        node ./mp-preview.mjs
 
     - name: Upload QR code to COS
       if: steps.check-author.outputs.allowed == 'true' && inputs.cos_secret_id != ''
