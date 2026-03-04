@@ -1,5 +1,6 @@
 const COS = require("./cos");
 const CDN = require("./cdn");
+const core = require("@actions/core");
 const { readConfig, collectLocalFiles } = require("./utils");
 
 async function main() {
@@ -18,7 +19,12 @@ async function main() {
   const localFiles = await collectLocalFiles(config.local_path);
   const changedFiles = await cosInstance.process(localFiles);
   const cdnInstance = new CDN(config);
-  await cdnInstance.process(changedFiles);
+  const cdnUrls = await cdnInstance.process(changedFiles);
+  if (cdnUrls && cdnUrls.length > 0) {
+    core.setOutput('urls', cdnUrls.join('\n'));
+    core.setOutput('url', cdnUrls[0]);
+  }
+
 }
 
 main();

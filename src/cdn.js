@@ -123,16 +123,18 @@ class CDN {
   async process(changedFiles) {
     if (!this.cdnPrefix) {
       console.log('[cdn] no prefix, skip flush');
-      return;
+      return [];
     }
     if (this.type === 'eo' && !this.zoneId) {
       console.log('[cdn] no eo_zone, skip flush');
-      return;
+      return [];
     }
     if (changedFiles.length === 0) {
       console.log('[cdn] files not change, skip flush');
-      return;
+      return [];
     }
+    // 生成所有变更文件的 CDN URLs
+    const cdnUrls = changedFiles.map((it) => this.createUrl(it));
     let taskId = undefined;
     if (this.clean || changedFiles.length > 200) {
       console.log('[cdn] flush all CDN cache');
@@ -140,7 +142,7 @@ class CDN {
     } else {
       // 清空部分缓存
       console.log(`[cdn] flush ${changedFiles.length} CDN caches`);
-      taskId = await this.purgeUrls(changedFiles.map((it) => this.createUrl(it)));
+      taskId = await this.purgeUrls(cdnUrls);
     }
     console.log(`[cdn] task id: ${taskId}`);
     if (taskId && this.waitFlush) {
@@ -155,6 +157,7 @@ class CDN {
         await sleep(8000);
       }
     }
+    return cdnUrls;
   }
 }
 

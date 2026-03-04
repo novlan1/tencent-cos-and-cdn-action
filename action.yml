@@ -61,6 +61,11 @@ inputs:
   config_file:
     description: 'COS config file path. Default is empty'
     required: false
+outputs:
+  urls:
+    description: 'CDN URLs of all changed files, separated by newline'
+  url:
+    description: 'CDN URL of the first changed file'
 runs:
   using: 'node20'
   main: 'dist/index.js'
