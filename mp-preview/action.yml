@@ -159,7 +159,9 @@ runs:
     - name: Install dependencies
       if: steps.check-author.outputs.allowed == 'true'
       shell: bash
-      run: ${{ inputs.install_command }}
+      run: |
+        pnpm store prune 2>/dev/null || true
+        ${{ inputs.install_command }}
 
     - name: Build Mini Program
       if: steps.check-author.outputs.allowed == 'true'
